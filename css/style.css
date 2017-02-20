@@ -1,0 +1,89 @@
+/*Контейнер с картами*/
+.bundle {
+    width: 40%;
+    margin: 0 auto 20px;
+}
+
+/*Контейнер с картой*/
+.mapCon {
+    /*width: 100%;*/
+    /*height: 100%;*/
+    height: 500px;
+    position: relative;
+}
+
+/*Список карт*/
+.view {
+    padding: 0;
+    position: relative;
+    border-bottom: 1px solid #cacaca;
+}
+
+.view li {
+    bottom: 0;
+    display: inline-block;
+    list-style: none;
+}
+
+/*Иконки*/
+
+.map-element,
+.map-element.active {
+    width: 20px;
+    height: 20px;
+    margin-right: 1px;
+}
+
+.map-element:not(.disabled) {
+    cursor: pointer;
+}
+
+.map-element {
+    background: url('../images/maps_small.png');
+}
+
+.map-element.active {
+    background: url('../images/maps_big.png');
+}
+
+.map-element.map-element-yandex {
+    background-position: 0 0;
+}
+
+.map-element.map-element-google {
+    background-position: 60px 0;
+}
+
+.map-element.map-element-gis {
+    background-position: 40px 0;
+}
+
+.map-element.map-element-gis.disabled {
+    background-position: 20px 0;
+}
+
+.map-element.active.map-element-yandex {
+    background-position: 0 0;
+}
+
+.map-element.active.map-element-google {
+    background-position: 40px 0;
+}
+
+.map-element.active.map-element-gis {
+    background-position: 20px 0;
+}
+
+.map-element-card {
+    display: none;
+    width: 100%;
+    height: 400px;
+}
+
+.map iframe {
+    border: none !important;
+}
+
+.map-in-new-window > a {
+    border-bottom: 1px dashed;
+}

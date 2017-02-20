@@ -1,0 +1,27 @@
+[
+  {
+    "city": "Moscow",
+    "lat": 55.8,
+    "lng": 37.6
+  },
+  {
+    "city": "Minsk",
+    "lat": 53.9,
+    "lng": 27.6
+  },
+  {
+    "city": "Warsaw",
+    "lat": 52.2,
+    "lng": 21.0
+  },
+  {
+    "city": "London",
+    "lat": 51.5,
+    "lng": -0.1
+  },
+  {
+    "city": "Kiev",
+    "lat": 50.5,
+    "lng": 30.5
+  }
+]
