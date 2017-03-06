@@ -95,8 +95,8 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
                 var ulList = document.createElement('ul');
                 ulList.className = 'view';
 
-                //вкладки
-                mapTypes.forEach(function (elem) {
+                mapTypes.forEach(function (elem, j) {
+                    //вкладки
                     var tab = document.createElement('li');
                     tab.innerHTML = '<a href="#" onclick="return false;"></a>';
                     tab.setAttribute('ng-click', 'switchTabs($event)');
@@ -106,23 +106,18 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
                         : tab.className = 'map-element map-element-' + elem;
                     $compile(tab)($scope);
                     angular.element(ulList).append(tab); //кладём вкладку в созданный выше UL list
+
+                    //добавление последней открытой карты в каждый контейнер (если таковой нет, добавляем яндекс)
+                    if ((window.localStorage.length != 0) && (elem == localStorage[index])) {
+                        eval(elem + 'Maps')(value.latitude, value.longitude, container, index);
+                    }
+                    else if ((j == 2) && (window.localStorage.length == 0)) {
+                        yandexMaps(value.latitude, value.longitude, container, index)
+                    }
                 });
 
                 //кладём панель с вкладками в общий контейнер
-                angular.element(container).append(ulList);
-
-                //добавляем последнюю открытую карту в каждый контейнер,
-                //если таковых нет, везде яндекс
-                if (window.localStorage.length != 0) {
-                    mapTypes.forEach(function (elem) {
-                        if (elem == localStorage[index]) {
-                            eval(elem + 'Maps')(value.latitude, value.longitude, container, index)
-                        }
-                    });
-                }
-                else {
-                    yandexMaps(value.latitude, value.longitude, container, index);
-                }
+                container.insertBefore(ulList, container.childNodes[0]);
             });
             $('#showBtn').hide(); //скрываем кнопку
         });
