@@ -88,6 +88,11 @@
     border-bottom: 1px dashed;
 }
 
+/*кнопка Show*/
+#showBtn{
+    margin: 10px 0 0 60px;
+}
+
 /*планшетная версия*/
 @media (max-width: 990px) {
     /*Контейнер с картами*/
@@ -97,7 +102,7 @@
     }
 }
 /*мобильная версия*/
-@media (max-width: 590px) {
+@media (max-width: 690px) {
     /*Контейнер с картами*/
     .bundle {
         margin: 0 auto 20px;

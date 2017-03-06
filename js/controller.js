@@ -5,6 +5,7 @@ var mapsApp = angular.module('mapsApp', []);
 mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scope, $http, $compile) {
 
     var maps = {}; // общий объект, содержащий все объекты-карты
+    var mapTypes = ['yandex', 'google', 'gis'];
 
     // Yandex maps
     var yandexMaps = function (x, y, container, i) {
@@ -14,6 +15,7 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
             ymapContainer.className = 'mapCon';
             ymapContainer.id = "yandexMapContainer" + i;
             angular.element(container).append(ymapContainer);
+            $('#yandexMapContainer' + i).siblings().not('ul').hide();
 
             maps['yandexMap' + i] = new ymaps.Map(ymapContainer, {
                 center: [x, y],
@@ -21,9 +23,10 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
                 controls: ["zoomControl", "fullscreenControl"]
             });
 
-
             var placemark = new ymaps.Placemark([x, y]);
             maps['yandexMap' + i].geoObjects.add(placemark);
+
+            localStorage[i] = 'yandex';
         }
     };
 
@@ -44,12 +47,13 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
 
         maps['googleMap' + i] = new google.maps.Map(gmapContainer, mapOptions);
 
-
         var marker = new google.maps.Marker({
             position: {lat: x, lng: y},
             map: maps['googleMap' + i]
         });
         marker.setMap(maps['googleMap' + i]);
+
+        localStorage[i] = 'google';
     };
 
     // Gis maps
@@ -68,60 +72,71 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
             });
 
             DG.marker([x, y]).addTo(maps['gisMap' + i]);
+
+            localStorage[i] = 'gis';
         }
     };
 
-    // получаем список объектов и пробегаемся по нему,
-    // создаем для каждого объекта контейнер и добавляем в него карты
-    $http.get('data.json').then(function (data) {
 
-        angular.forEach(data['data'], function (value, index) {
-            //общий контейнер
-            var container = document.createElement('div');
-            container.setAttribute('data-lat', value.lat);
-            container.setAttribute('data-lng', value.lng);
-            container.className = 'bundle';
-            container.id = index;
-            angular.element($('#maps')).append(container);
+    $scope.show = function () {
+        // получаем список объектов и пробегаемся по нему,
+        // создаем для каждого объекта контейнер и добавляем в него карты
+        $http.get('data.json').then(function (data) {
+            angular.forEach(data['data'], function (value, index) {
+                //общий контейнер
+                var container = document.createElement('div');
+                container.setAttribute('data-latitude', value.latitude);
+                container.setAttribute('data-longitude', value.longitude);
+                container.className = 'bundle';
+                container.id = index;
+                angular.element($('#maps')).append(container);
 
-            //панель с вкладками
-            var ulList = document.createElement('ul');
-            ulList.className = 'view';
-            //вкладки
-            var tab = document.createElement('li');
-            tab.innerHTML = '<a href="#" onclick="return false;"></a>';
-            tab.setAttribute('ng-click', 'switchTabs($event)');
-            var liYandex = tab.cloneNode(true);
-            liYandex.setAttribute('data-target', 'yandexMapContainer' + index);
-            liYandex.className = 'active map-element map-element-yandex';
-            $compile(liYandex)($scope);
-            var liGoogle = tab;
-            liGoogle.setAttribute('data-target', 'googleMapContainer' + index);
-            liGoogle.className = 'map-element map-element-google';
-            $compile(liGoogle)($scope);
-            var liGis = tab.cloneNode(true);
-            liGis.setAttribute('data-target', 'gisMapContainer' + index);
-            liGis.className = 'map-element map-element-gis';
-            $compile(liGis)($scope);
+                //панель с вкладками
+                var ulList = document.createElement('ul');
+                ulList.className = 'view';
 
-            //добавляем вкладки в UL list, а затем UL list в общий контейнер
-            angular.element(ulList).append(liYandex, liGoogle, liGis);
-            angular.element(container).append(ulList);
+                //вкладки
+                mapTypes.forEach(function (elem) {
+                    var tab = document.createElement('li');
+                    tab.innerHTML = '<a href="#" onclick="return false;"></a>';
+                    tab.setAttribute('ng-click', 'switchTabs($event)');
+                    tab.setAttribute('data-target', elem + 'MapContainer' + index);
+                    localStorage[index] == elem
+                        ? tab.className = 'active map-element map-element-' + elem
+                        : tab.className = 'map-element map-element-' + elem;
+                    $compile(tab)($scope);
+                    angular.element(ulList).append(tab); //кладём вкладку в созданный выше UL list
+                });
 
-            // при загрузке страницы сразу отобразим yandex-карту для каждого объекта
-            yandexMaps(value.lat, value.lng, container, index);
+                //кладём панель с вкладками в общий контейнер
+                angular.element(container).append(ulList);
+
+                //добавляем последнюю открытую карту в каждый контейнер,
+                //если таковых нет, везде яндекс
+                if (window.localStorage.length != 0) {
+                    mapTypes.forEach(function (elem) {
+                        if (elem == localStorage[index]) {
+                            eval(elem + 'Maps')(value.latitude, value.longitude, container, index)
+                        }
+                    });
+                }
+                else {
+                    yandexMaps(value.latitude, value.longitude, container, index);
+                }
+            });
+            $('#showBtn').hide(); //скрываем кнопку
         });
-    });
+    };
 
     // переключение вкладок и отображение карты
     $scope.switchTabs = function (event) {
         angular.element(event.target).siblings().removeClass("active");
         angular.element(event.target).addClass("active");
 
-        var container = event.target.parentNode.parentNode; //контейнер для карты
-        var currentID = event.target.parentNode.parentNode.id; //index
-        var x = parseInt(event.target.parentNode.parentNode.getAttribute("data-lat")); //координата lat
-        var y = parseInt(event.target.parentNode.parentNode.getAttribute("data-lng")); //координата lng
+        var container = $(event.target).parents('.bundle')[0]; //контейнер для карты
+        var currentID = $(event.target).parents('.bundle')[0].id; //index
+        var x = $(event.target).parents('.bundle')[0].getAttribute('data-latitude'); //координата latitude
+        var y = $(event.target).parents('.bundle')[0].getAttribute('data-longitude'); //координата longitude
 
         //скрываем контейнеры других карт и отображаем текущий
         var serviceContainer = $("#" + event.target.getAttribute("data-target"));
@@ -129,25 +144,24 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
         serviceContainer.show();
 
         //проверяем принадлежность к сервису и вызываем соответствующий метод
-        switch (event.target.getAttribute("data-target")) {
-            case 'yandexMapContainer' + currentID:
-                maps['yandexMap' + currentID].container.fitToViewport();
+        switch (event.target.getAttribute("data-target").replace('MapContainer' + currentID, '')) {
+            case 'yandex':
+                maps['yandexMap' + currentID]
+                    ? maps['yandexMap' + currentID].container.fitToViewport()
+                    : yandexMaps(x, y, container, currentID);
+                localStorage[currentID] = 'yandex';
                 break;
-            case 'googleMapContainer' + currentID:
-                if (maps['googleMap' + currentID]) {
-                    google.maps.event.trigger(maps['googleMap' + currentID], 'resize');
-                }
-                else {
-                    googleMaps(x, y, container, currentID);
-                }
+            case 'google':
+                maps['googleMap' + currentID]
+                    ? google.maps.event.trigger(maps['googleMap' + currentID], 'resize')
+                    : googleMaps(x, y, container, currentID);
+                localStorage[currentID] = 'google';
                 break;
-            case 'gisMapContainer' + currentID:
-                if (maps['gisMap' + currentID]) {
-                    maps['gisMap' + currentID].invalidateSize();
-                }
-                else {
-                    gisMaps(x, y, container, currentID);
-                }
+            case 'gis':
+                maps['gisMap' + currentID]
+                    ? maps['gisMap' + currentID].invalidateSize()
+                    : gisMaps(x, y, container, currentID);
+                localStorage[currentID] = 'gis';
                 break;
         }
     };

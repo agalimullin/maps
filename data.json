@@ -1,27 +1,27 @@
 [
   {
     "city": "Moscow",
-    "lat": 55.8,
-    "lng": 37.6
+    "latitude": 55.8,
+    "longitude": 37.6
   },
   {
     "city": "Minsk",
-    "lat": 53.9,
-    "lng": 27.6
+    "latitude": 53.9,
+    "longitude": 27.6
   },
   {
     "city": "Warsaw",
-    "lat": 52.2,
-    "lng": 21.0
+    "latitude": 52.2,
+    "longitude": 21.0
   },
   {
     "city": "London",
-    "lat": 51.5,
-    "lng": -0.1
+    "latitude": 51.5,
+    "longitude": -0.1
   },
   {
     "city": "Kiev",
-    "lat": 50.5,
-    "lng": 30.5
+    "latitude": 50.5,
+    "longitude": 30.5
   }
 ]
