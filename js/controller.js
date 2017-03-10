@@ -6,53 +6,54 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
 
     var maps = {}; // общий объект, содержащий все объекты-карты
     var mapTypes = ['yandex', 'google', 'gis'];
+    
+    var updateMap = function (mapService, map) {
+      switch (mapService){
+          case 'yandex': map.container.fitToViewport(); break;
+          case 'google':  google.maps.event.trigger(map, 'resize'); break;
+          case 'gis': map.invalidateSize(); break;
+      }
+    };
+    
+    var getMapContainer = function (mapService, i, mainContainer) {
+        var container = document.createElement('div');
+        container.className = 'mapCon';
+        container.id = mapService + "MapContainer" + i;
+        angular.element(mainContainer).append(container);
+        $('#' + mapService + 'MapContainer' + i).siblings().not('ul').hide();
+        return container;
+    };
 
     // Yandex maps
     var yandexMaps = function (x, y, container, i) {
         ymaps.ready(init);
         function init() {
-            var ymapContainer = document.createElement('div');
-            ymapContainer.className = 'mapCon';
-            ymapContainer.id = "yandexMapContainer" + i;
-            angular.element(container).append(ymapContainer);
-            $('#yandexMapContainer' + i).siblings().not('ul').hide();
-
+            var ymapContainer = getMapContainer('yandex', i, container);
             maps['yandexMap' + i] = new ymaps.Map(ymapContainer, {
                 center: [x, y],
                 zoom: 15,
                 controls: ["zoomControl", "fullscreenControl"]
             });
-
             var placemark = new ymaps.Placemark([x, y]);
             maps['yandexMap' + i].geoObjects.add(placemark);
-
             localStorage[i] = 'yandex';
         }
     };
 
     // Google maps
     var googleMaps = function (x, y, container, i) {
-        var gmapContainer = document.createElement('div');
-        gmapContainer.className = 'mapCon';
-        gmapContainer.id = "googleMapContainer" + i;
-        angular.element(container).append(gmapContainer);
-        $('#googleMapContainer' + i).siblings().not('ul').hide();
-
+        var gmapContainer = getMapContainer('google', i, container);
         var mapOptions = {
             center: new google.maps.LatLng(x, y),
             zoom: 15,
             disableDefaultUI: true,
             zoomControl: true
         };
-
         maps['googleMap' + i] = new google.maps.Map(gmapContainer, mapOptions);
-
         var marker = new google.maps.Marker({
-            position: {lat: x, lng: y},
-            map: maps['googleMap' + i]
+            position: {lat: x, lng: y}, map: maps['googleMap' + i]
         });
         marker.setMap(maps['googleMap' + i]);
-
         localStorage[i] = 'google';
     };
 
@@ -60,27 +61,18 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
     var gisMaps = function (x, y, container, i) {
         DG.then(init);
         function init() {
-            var gismapContainer = document.createElement('div');
-            gismapContainer.className = 'mapCon';
-            gismapContainer.id = "gisMapContainer" + i;
-            angular.element(container).append(gismapContainer);
-            $('#gisMapContainer' + i).siblings().not('ul').hide();
-
+            var gismapContainer = getMapContainer('gis', i, container);
             maps['gisMap' + i] = DG.map(gismapContainer, {
-                center: [x, y],
-                zoom: 15
+                center: [x, y], zoom: 15
             });
-
             DG.marker([x, y]).addTo(maps['gisMap' + i]);
-
             localStorage[i] = 'gis';
         }
     };
 
 
     $scope.show = function () {
-        // получаем список объектов и пробегаемся по нему,
-        // создаем для каждого объекта контейнер и добавляем в него карты
+        // получаем список объектов, пробегаемся, создаем для каждого контейнер и добавляем в него карты
         $http.get('data.json').then(function (data) {
             angular.forEach(data['data'], function (value, index) {
                 //общий контейнер
@@ -130,8 +122,8 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
 
         var container = $(event.target).parents('.bundle')[0]; //контейнер для карты
         var currentID = $(event.target).parents('.bundle')[0].id; //index
-        var x = $(event.target).parents('.bundle')[0].getAttribute('data-latitude'); //координата latitude
-        var y = $(event.target).parents('.bundle')[0].getAttribute('data-longitude'); //координата longitude
+        var x = parseFloat($(event.target).parents('.bundle')[0].getAttribute('data-latitude')); //координата latitude
+        var y = parseFloat($(event.target).parents('.bundle')[0].getAttribute('data-longitude')); //координата longitude
 
         //скрываем контейнеры других карт и отображаем текущий
         var serviceContainer = $("#" + event.target.getAttribute("data-target"));
@@ -139,26 +131,11 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
         serviceContainer.show();
 
         //проверяем принадлежность к сервису и вызываем соответствующий метод
-        switch (event.target.getAttribute("data-target").replace('MapContainer' + currentID, '')) {
-            case 'yandex':
-                maps['yandexMap' + currentID]
-                    ? maps['yandexMap' + currentID].container.fitToViewport()
-                    : yandexMaps(x, y, container, currentID);
-                localStorage[currentID] = 'yandex';
-                break;
-            case 'google':
-                maps['googleMap' + currentID]
-                    ? google.maps.event.trigger(maps['googleMap' + currentID], 'resize')
-                    : googleMaps(x, y, container, currentID);
-                localStorage[currentID] = 'google';
-                break;
-            case 'gis':
-                maps['gisMap' + currentID]
-                    ? maps['gisMap' + currentID].invalidateSize()
-                    : gisMaps(x, y, container, currentID);
-                localStorage[currentID] = 'gis';
-                break;
-        }
+        var mapService = event.target.getAttribute("data-target").replace('MapContainer' + currentID, '');
+        maps[mapService + 'Map' + currentID]
+            ? updateMap(mapService, maps[mapService + 'Map' + currentID])
+            : eval(mapService + 'Maps')(x, y, container, currentID);
+        localStorage[currentID] = mapService;
     };
 
 }]);
