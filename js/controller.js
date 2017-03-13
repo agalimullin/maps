@@ -4,9 +4,21 @@ var mapsApp = angular.module('mapsApp', []);
 
 mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scope, $http, $compile) {
 
-    var maps = {}; // общий объект, содержащий все объекты-карты
+    // общий объект, содержащий все объекты-карты
+    var maps = {
+        init: function (mapService, x, y, container, currentID) {
+            eval(mapService)(x, y, container, currentID);
+        },
+        update : function(map, mapService) {
+            switch (mapService){
+                case 'yandex': map.container.fitToViewport(); break;
+                case 'google':  google.maps.event.trigger(map, 'resize'); break;
+                case 'gis': map.invalidateSize(); break;
+            }
+        }
+    };
     var mapTypes = ['yandex', 'google', 'gis'];
-    
+
     var updateMap = function (mapService, map) {
       switch (mapService){
           case 'yandex': map.container.fitToViewport(); break;
@@ -14,7 +26,7 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
           case 'gis': map.invalidateSize(); break;
       }
     };
-    
+
     var getMapContainer = function (mapService, i, mainContainer) {
         var container = document.createElement('div');
         container.className = 'mapCon';
@@ -69,7 +81,6 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
             localStorage[i] = 'gis';
         }
     };
-
 
     $scope.show = function () {
         // получаем список объектов, пробегаемся, создаем для каждого контейнер и добавляем в него карты
@@ -132,10 +143,12 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
 
         //проверяем принадлежность к сервису и вызываем соответствующий метод
         var mapService = event.target.getAttribute("data-target").replace('MapContainer' + currentID, '');
+        // maps[mapService + 'Map' + currentID]
+        //     ? updateMap(mapService, maps[mapService + 'Map' + currentID])
+        //     : eval(mapService + 'Maps')(x, y, container, currentID);
         maps[mapService + 'Map' + currentID]
-            ? updateMap(mapService, maps[mapService + 'Map' + currentID])
-            : eval(mapService + 'Maps')(x, y, container, currentID);
-        localStorage[currentID] = mapService;
+            ? maps.update(mapService, maps[mapService + 'Map' + currentID])
+            : maps.init(mapService + 'Maps')(x, y, container, currentID);
     };
 
 }]);
