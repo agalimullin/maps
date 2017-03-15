@@ -7,7 +7,7 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
     // общий объект, содержащий все объекты-карты
     var maps = {
         init: function (mapService, x, y, container, currentID) {
-            eval(mapService)(x, y, container, currentID);
+            eval(mapService + 'Maps')(x, y, container, currentID);
         },
         update : function(map, mapService) {
             switch (mapService){
@@ -148,7 +148,7 @@ mapsApp.controller('switchMaps', ['$scope', '$http', '$compile', function ($scop
         //     : eval(mapService + 'Maps')(x, y, container, currentID);
         maps[mapService + 'Map' + currentID]
             ? maps.update(mapService, maps[mapService + 'Map' + currentID])
-            : maps.init(mapService + 'Maps')(x, y, container, currentID);
+            : maps.init(mapService, x, y, container, currentID);
     };
 
 }]);
